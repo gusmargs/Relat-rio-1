@@ -1,0 +1,672 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simulação Interativa: Campo Magnético</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        /* ------------------------------------- */
+        /* Estilos Gerais e Layout de 3 Colunas (Adaptado de Eletrico) */
+        /* ------------------------------------- */
+        body {
+            font-family: 'Inter', sans-serif;
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            background-color: #f4f4f9;
+        }
+
+        .menu-link {
+            display: block;
+            padding: 15px;
+            background-color: #343a40;
+            color: white;
+            text-align: center;
+            text-decoration: none;
+            font-weight: bold;
+            transition: background-color 0.3s;
+        }
+        .menu-link:hover {
+            background-color: #1d2124;
+        }
+
+        .main-content {
+            display: flex;
+            flex-grow: 1;
+        }
+        
+        /* Estilo para as três colunas */
+        .coluna {
+            flex: 1; 
+            padding: 20px;
+            box-sizing: border-box;
+            overflow-y: auto;
+            border-right: 1px solid #ccc;
+        }
+        /* Remove a borda da última coluna */
+        .coluna:last-child {
+            border-right: none;
+        }
+
+        /* Cores de fundo para as colunas */
+        .coluna-midia {
+            background-color: #f8f9fa; /* Cinza claro */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .coluna-simulacao {
+            background-color: #e9ecef; /* Cor de fundo da simulação */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .coluna-explicacao {
+            background-color: #ffffff; /* Branco */
+        }
+        
+        /* ------------------------------------- */
+        /* Responsividade */
+        /* ------------------------------------- */
+        @media (max-width: 992px) { 
+            .main-content {
+                flex-direction: column;
+            }
+            .coluna {
+                 border-right: none;
+                 border-bottom: 2px solid #ccc; 
+            }
+            .coluna:last-child {
+                border-bottom: none;
+            }
+        }
+
+
+        /* ------------------------------------- */
+        /* Estilos de Componentes */
+        /* ------------------------------------- */
+
+        h2 {
+            text-align: center;
+            color: #dc3545; /* Vermelho para Magnetismo */
+            border-bottom: 2px solid #dc3545;
+            padding-bottom: 10px;
+            margin-top: 0;
+            width: 100%;
+            margin-bottom: 20px;
+        }
+        
+        /* Estilos para o Canvas da Simulação */
+        canvas {
+            border: 1px solid #ddd;
+            background-color: #001f3f; /* Fundo azul escuro para simular o espaço */
+            border-radius: 8px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            max-width: 100%;
+        }
+
+        .legenda {
+            margin-top: 15px;
+            font-size: 0.9em;
+            color: #555;
+            text-align: center;
+        }
+        
+        /* Descrição */
+        .simulacao-descricao, .descricao-texto {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+            width: 100%;
+            text-align: left;
+        }
+        
+        /* ---------------------------------------------------- */
+        /* Estilos do Vídeo Miniatura e Botão de Controle */
+        /* ---------------------------------------------------- */
+
+        #videoNarradorMini {
+            width: 150px; 
+            height: 150px;
+            border-radius: 50%;
+            overflow: hidden;
+            border: 3px solid #dc3545; /* Borda de destaque vermelha */
+            box-shadow: 0 0 15px rgba(220, 53, 69, 0.6);
+            transition: transform 0.3s ease;
+            z-index: 10;
+            margin-bottom: 20px;
+        }
+
+        #videoNarradorMini video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover; 
+        }
+        
+        /* Estilo do Botão de Play/Pause */
+        #btnControleNaracao {
+            display: block;
+            width: 100%;
+            max-width: 250px;
+            padding: 10px;
+            margin-top: 10px;
+            background-color: #dc3545; /* Vermelho para Magnetismo */
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 1.1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        #btnControleNaracao.paused {
+            background-color: #ffc107; 
+            color: #333;
+        }
+        #btnControleNaracao.playing {
+            background-color: #dc3545; 
+        }
+        #btnControleNaracao:disabled {
+            background-color: #6c757d;
+            cursor: not-allowed;
+        }
+        
+        /* Controles específicos da simulação */
+        .controles-simulacao {
+            padding: 10px;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+            margin-top: 15px;
+            text-align: center;
+            width: 100%;
+            max-width: 300px;
+        }
+        .controles-simulacao label {
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 8px;
+            display: block;
+            text-align: left;
+            margin-left: 5px;
+        }
+        .controles-simulacao button {
+            padding: 8px 15px;
+            margin: 5px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+        #btnRestart { background-color: #007bff; color: white; }
+        #btnLaunch { background-color: #28a745; color: white; }
+
+        /* ---------------------------------------------------- */
+        /* ESTILOS DO FLUXOGRAMA (NOVO) */
+        /* ---------------------------------------------------- */
+        .flowchart-panel { 
+            min-width: 400px; 
+            background: #ffffff; 
+            padding: 0; 
+            border-radius: 8px; 
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); 
+        } 
+        .flowchart-panel h3 { 
+            color: #00416A; 
+            margin-bottom: 20px; 
+            font-size: 24px; 
+            text-align: center; 
+        } 
+        .flow-step {
+            background: #f8f9fa;
+            border-left: 4px solid #dc3545; /* Cor da linha vertical (Vermelho para Magnético) */
+            padding: 15px 20px;
+            margin: 25px auto;
+            border-radius: 0 8px 8px 0;
+            position: relative;
+            max-width: 90%;
+            text-align: center;
+        }
+        .flow-step::after {
+            content: '↓';
+            position: absolute;
+            bottom: -28px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 24px;
+            color: #ccc;
+            font-weight: bold;
+        }
+        .flow-step:last-child::after { content: ''; }
+        .flow-step strong { color: #dc3545; display: block; margin-bottom: 8px; font-size: 1.1em; }
+        .flow-step p { font-size: 0.95em; line-height: 1.6; color: #555; }
+
+        /* Ajuste do padding na coluna para comportar o novo painel */
+        .coluna-explicacao {
+            padding: 20px 0; 
+        }
+
+    </style>
+</head>
+<body>
+
+    <a href="index.html" class="menu-link">← Voltar para o Menu Principal</a>
+
+    <div class="main-content">
+        
+        <div class="coluna coluna-midia">
+            <h2>Personagem e Narração TTS</h2>
+            
+            <div id="videoNarradorMini">
+                <video id="videoProfessor" loop muted autoplay width="100%" height="100%">
+                    <source src="video_professor.mp4" type="video/mp4">
+                    Seu navegador não suporta a tag de vídeo.
+                </video>
+            </div>
+            
+            <button id="btnControleNaracao" class="paused" disabled>
+                <span class="play-icon">▶</span> Carregando Narração...
+            </button>
+            
+            <p style="text-align: center; margin-top: 15px; font-size: 0.9em; color: #555;">
+                O vídeo é um elemento visual. Use o botão para iniciar a narração por voz (TTS).
+            </p>
+
+        </div>
+
+        <div class="coluna coluna-simulacao">
+            <h2>Simulação: Campo magnético</h2>
+            
+            <canvas id="mFieldCanvas" width="500" height="500"></canvas>
+            
+            <div class="controles-simulacao">
+                <label for="tipoCarga">Tipo de Partícula:</label>
+                <select id="tipoCarga" onchange="resetSimulacao()">
+                    <option value="proton">Próton (+ Positiva)</option>
+                    <option value="eletron">Elétron (- Negativa)</option>
+                </select>
+                
+                <label for="campoDirecao">Direção do Campo Magnético (B):</label>
+                <select id="campoDirecao" onchange="resetSimulacao()">
+                    <option value="in">Dentro da Tela (x)</option>
+                    <option value="out">Fora da Tela (•)</option>
+                    <option value="zero">Campo Zero</option>
+                </select>
+                
+                <button id="btnLaunch">Lançar Partícula</button>
+                <button id="btnRestart">Reiniciar</button>
+            </div>
+
+            <p class="legenda">O fundo azul escuro representa o Campo Magnético (B) uniforme. O Próton (Vermelho) ou Elétron (Azul) é lançado com velocidade (v).</p>
+            
+            <div class="simulacao-descricao">
+                <h3>O que você está observando:</h3>
+                <p><strong>Força de Lorentz:</strong> A força magnética (F) é sempre perpendicular à velocidade (v) da partícula e ao Campo Magnético (B).</p>
+                <p><strong>Trajetória:</strong> Quando F, v, e B são perpendiculares, a força age como uma força centrípeta, fazendo a partícula realizar um **movimento circular uniforme**.</p>
+                <p><strong>Regra da Mão:</strong> O sentido da curva (horário ou anti-horário) depende do sinal da carga (q), conforme a **Regra da Mão Direita (para cargas positivas)** ou **Mão Esquerda (para cargas negativas)**.</p>
+            </div>
+        </div>
+
+        <div class="coluna coluna-explicacao">
+            
+            <h2>Fluxograma Explicativo: Campo magnético</h2>
+            
+            <div class="flowchart-panel">
+                <div class="flow-step">
+                    <strong>1. Condição Inicial</strong>
+                    <p>Existe Força Magnética (F vetor) apenas se uma carga (q) estiver em movimento (velocidade v vetor) dentro de um Campo Magnético (B vetor).</p>
+                </div>
+                <div class="flow-step">
+                    <strong>2. Cálculo da Força</strong>
+                    <p>A Força de Lorentz é dada por: F (vetor) = q * (v (vetor) X B (vetor)). O módulo é F = |q| * v * B * sen(ângulo).</p>
+                </div>
+                <div class="flow-step">
+                    <strong>3. Regra da Mão</strong>
+                    <p>Use a **Regra da Mão Direita** (cargas positivas) ou **Mão Esquerda** (cargas negativas) para a direção da força.</p>
+                </div>
+                <div class="flow-step">
+                    <strong>4. Correspondência (RMD/RME)</strong>
+                    <p>O vetor Força (F vetor) é o **Dedo Médio**; Velocidade (v vetor) é o **Polegar**; Campo (B vetor) é o **Indicador**.</p>
+                </div>
+                <div class="flow-step">
+                    <strong>5. Trajetória</strong>
+                    <p>Se v for perpendicular a B, a força age como centrípeta, resultando em um **Movimento Circular Uniforme**.</p>
+                </div>
+                <div class="flow-step">
+                    <strong>6. Força Nula</strong>
+                    <p>A Força é zero se a carga estiver parada (v=0) ou se a velocidade for paralela ao campo (ângulo=0° ou 180°).</p>
+                </div>
+            </div>
+        </div>
+        
+    </div>
+
+<script>
+    // --- Variáveis de Configuração da Simulação ---
+    const LARGURA_JANELA = 500;
+    const ALTURA_JANELA = 500;
+    const CENTRO_X = LARGURA_JANELA / 2;
+    const CENTRO_Y = ALTURA_JANELA / 2;
+    
+    // Escala e Constantes Físicas
+    const ESCALA_B = 0.0001; 
+    const CARGA_MAGNITUDE = 5000; 
+    const DT = 0.1; 
+
+    // Variáveis da Partícula
+    let particula = {
+        x: CENTRO_X,
+        y: CENTRO_Y,
+        vx: 0,
+        vy: 0,
+        q: 1, 
+        cor: 'red',
+        raio: 6
+    };
+    
+    // Variáveis do Campo
+    let B_magnitude = 3; 
+    let B_direcao = 1; 
+
+    let canvas, ctx;
+    let animationFrameId;
+
+    // --- Lógica de Narração (TTS) ---
+
+    const videoElement = document.getElementById('videoProfessor');
+    const btnControle = document.getElementById('btnControleNaracao');
+
+    let isSpeaking = false;
+    let currentUtteranceIndex = 0;
+    let portugueseVoice = null; 
+    let voicesLoaded = false;
+    
+    const SCRIPT_NARRACAO = [
+        "Bem-vindo à Simulação de Campo Magnético.",
+        "O Campo Magnético B está apontando para dentro da tela, representado pelos 'X'.",
+        "Clique em 'Lançar Partícula'. A Força de Lorentz, F, faz a carga se mover em um círculo, pois F é sempre perpendicular à velocidade.",
+        "Mude para 'Elétron'. Cargas negativas invertem o sentido da força e o movimento, seguindo a regra da mão esquerda.",
+        "A força é zero se você escolher o 'Campo Zero' ou se a partícula fosse lançada paralelamente ao campo. Observe a Força de Lorentz em ação!",
+        "Obrigado por utilizar a simulação."
+    ];
+    
+    let utteranceArray = [];
+    
+    function setupVoices() {
+        if (!('speechSynthesis' in window)) {
+            btnControle.textContent = "TTS Indisponível";
+            btnControle.disabled = true;
+            return;
+        }
+
+        if (window.speechSynthesis.onvoiceschanged !== undefined) {
+             window.speechSynthesis.onvoiceschanged = loadVoices;
+        }
+        loadVoices(); 
+    }
+
+    function loadVoices() {
+        const voices = window.speechSynthesis.getVoices();
+        
+        if (voices.length === 0 && !voicesLoaded) {
+             setTimeout(loadVoices, 200);
+             return;
+        }
+        
+        if (voicesLoaded) return; 
+
+        portugueseVoice = voices.find(voice => voice.lang.includes('pt-BR') || voice.lang.includes('pt-PT'));
+
+        utteranceArray = [];
+        SCRIPT_NARRACAO.forEach((texto, index) => {
+            const utterance = new SpeechSynthesisUtterance(texto);
+            utterance.lang = 'pt-BR';
+            if (portugueseVoice) {
+                utterance.voice = portugueseVoice;
+            }
+            utterance.pitch = 1; 
+            utterance.rate = 1.1; 
+            
+            // Correção: Configurar onend para progredir e iniciar a próxima
+            utterance.onend = () => {
+                currentUtteranceIndex++;
+                if (currentUtteranceIndex < utteranceArray.length) {
+                    window.speechSynthesis.speak(utteranceArray[currentUtteranceIndex]);
+                } else {
+                    handleNaracaoConcluida();
+                }
+            };
+            utteranceArray.push(utterance);
+        });
+        
+        voicesLoaded = true;
+        console.log("Vozes TTS carregadas. Narração pronta para interagir.");
+        
+        btnControle.textContent = "▶ PLAY Narração";
+        btnControle.disabled = false;
+    }
+    
+    function handleNaracaoConcluida() {
+        window.speechSynthesis.cancel();
+        isSpeaking = false;
+        currentUtteranceIndex = 0; 
+        
+        btnControle.textContent = "▶ REINICIAR Narração";
+        btnControle.classList.remove('playing');
+        btnControle.classList.add('paused');
+        btnControle.disabled = false;
+    }
+
+    function pausarNaracaoEVideo() {
+        if (isSpeaking && window.speechSynthesis.speaking) {
+            window.speechSynthesis.pause();
+            isSpeaking = false;
+            
+            btnControle.textContent = "▶ CONTINUAR Narração";
+            btnControle.classList.remove('playing');
+            btnControle.classList.add('paused');
+        }
+    }
+    
+    function iniciarOuContinuarNaracaoEVideo() {
+        if (!voicesLoaded || btnControle.disabled) {
+             return;
+        }
+
+        if (isSpeaking && window.speechSynthesis.speaking) {
+            // Se está falando, pausa
+            pausarNaracaoEVideo();
+        } else {
+            // Se está pausada ou no início/fim
+            isSpeaking = true;
+            btnControle.textContent = "❚❚ PAUSE Narração";
+            btnControle.classList.remove('paused');
+            btnControle.classList.add('playing');
+
+            if (window.speechSynthesis.paused) {
+                // Se estava pausada, retoma
+                window.speechSynthesis.resume();
+            } else {
+                // Se a fila acabou ou é a primeira vez, reinicia
+                if (currentUtteranceIndex >= utteranceArray.length) {
+                     currentUtteranceIndex = 0; 
+                     window.speechSynthesis.cancel(); 
+                }
+                
+                // Cancela qualquer fala anterior, caso o usuário tenha trocado de aba/simulação
+                window.speechSynthesis.cancel();
+                
+                // Inicia a partir do índice atual (0 ou o ponto de pausa)
+                if (utteranceArray[currentUtteranceIndex]) {
+                    window.speechSynthesis.speak(utteranceArray[currentUtteranceIndex]);
+                }
+            }
+        }
+    }
+
+    // --- Funções da Simulação ---
+
+    function drawBField() {
+        // Desenha o Campo Magnético (B)
+        const symbol = B_direcao === 1 ? 'x' : '•'; // 'x' para dentro, '•' para fora
+        const color = B_direcao === 0 ? 'rgba(255, 255, 255, 0.1)' : 'rgba(255, 255, 255, 0.3)';
+        
+        ctx.fillStyle = color;
+        ctx.font = 'bold 20px Inter';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+
+        const step = 50;
+        for (let i = 0; i < LARGURA_JANELA; i += step) {
+            for (let j = 0; j < ALTURA_JANELA; j += step) {
+                ctx.fillText(symbol, i + step/2, j + step/2);
+            }
+        }
+    }
+
+    function calcularForca() {
+        // Força de Lorentz: F = q * (v x B)
+
+        const q = particula.q * CARGA_MAGNITUDE;
+        const B = B_direcao * B_magnitude * ESCALA_B; // Bz
+
+        // Fx = q * vy * Bz
+        const Fx = q * particula.vy * B;
+        // Fy = -q * vx * Bz
+        const Fy = -q * particula.vx * B;
+
+        // Aceleração (a = F/m, assumindo massa m=1)
+        const ax = Fx;
+        const ay = Fy;
+
+        return { ax, ay };
+    }
+
+    function drawParticula() {
+        // Desenha a partícula
+        ctx.beginPath();
+        ctx.arc(particula.x, particula.y, particula.raio, 0, 2 * Math.PI);
+        ctx.fillStyle = particula.cor;
+        ctx.fill();
+        ctx.strokeStyle = 'white';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+
+        // Desenha o vetor velocidade (opcional)
+        const v_scale = 10;
+        ctx.strokeStyle = 'yellow';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(particula.x, particula.y);
+        ctx.lineTo(particula.x + particula.vx * v_scale, particula.y + particula.vy * v_scale);
+        ctx.stroke();
+    }
+
+    function updateParticula() {
+        if (B_direcao === 0) return; 
+
+        const { ax, ay } = calcularForca();
+
+        // Integração de Euler (simples)
+        particula.vx += ax * DT;
+        particula.vy += ay * DT;
+        particula.x += particula.vx * DT;
+        particula.y += particula.vy * DT;
+
+        // Impede que a partícula saia da tela
+        if (particula.x < 0 || particula.x > LARGURA_JANELA || particula.y < 0 || particula.y > ALTURA_JANELA) {
+            cancelAnimationFrame(animationFrameId);
+            document.getElementById('btnLaunch').disabled = false;
+        }
+    }
+    
+    function resetSimulacao() {
+        cancelAnimationFrame(animationFrameId);
+        
+        const tipoCarga = document.getElementById('tipoCarga').value;
+        const campoDir = document.getElementById('campoDirecao').value;
+        
+        particula.q = tipoCarga === 'proton' ? 1 : -1;
+        particula.cor = tipoCarga === 'proton' ? '#FF3333' : '#3366FF';
+        
+        if (campoDir === 'in') {
+            B_direcao = 1;
+            B_magnitude = 3; 
+        } else if (campoDir === 'out') {
+            B_direcao = -1;
+            B_magnitude = 3; 
+        } else {
+            B_direcao = 0;
+            B_magnitude = 0;
+        }
+
+        particula.x = CENTRO_X;
+        particula.y = CENTRO_Y;
+        particula.vx = 0;
+        particula.vy = 0;
+        
+        document.getElementById('btnLaunch').disabled = false;
+        
+        ctx.clearRect(0, 0, LARGURA_JANELA, ALTURA_JANELA);
+        drawBField();
+        drawParticula();
+    }
+    
+    function launchParticula() {
+        if (particula.vx !== 0 || particula.vy !== 0) return; 
+        
+        particula.vx = 20;
+        particula.vy = 0;
+        
+        document.getElementById('btnLaunch').disabled = true;
+        
+        animarSimulacao();
+    }
+
+    function animarSimulacao(timestamp) {
+        ctx.clearRect(0, 0, LARGURA_JANELA, ALTURA_JANELA);
+        
+        drawBField();
+        
+        updateParticula();
+        
+        drawParticula();
+
+        animationFrameId = requestAnimationFrame(animarSimulacao);
+    }
+
+    // --- Inicialização Geral ---
+
+    function iniciarSimulacao() {
+        canvas = document.getElementById('mFieldCanvas');
+        ctx = canvas.getContext('2d');
+        
+        // CORREÇÃO: Chama setupVoices para iniciar o carregamento do TTS
+        setupVoices();
+        
+        document.getElementById('btnRestart').addEventListener('click', resetSimulacao);
+        document.getElementById('btnLaunch').addEventListener('click', launchParticula);
+        
+        btnControle.addEventListener('click', iniciarOuContinuarNaracaoEVideo);
+
+        resetSimulacao();
+        
+        // Tenta iniciar o vídeo aqui também
+        if (videoElement) {
+             videoElement.play().catch(e => console.log("Vídeo não iniciado automaticamente."));
+        }
+    }
+
+    window.onload = iniciarSimulacao;
+
+</script>
+
+</body>
+</html>

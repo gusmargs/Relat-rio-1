@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Menu de Simulações de Física</title>
+    
+    <style>
+        /* ------------------------------------- */
+        /* Estilos Gerais e Centralização */
+        /* ------------------------------------- */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f0f2f5; /* Fundo suave */
+            display: flex;
+            justify-content: center; /* Centraliza horizontalmente */
+            align-items: center; /* Centraliza verticalmente */
+            min-height: 100vh; /* Garante que ocupe a altura total da tela */
+            margin: 0;
+        }
+
+        .container {
+            background-color: #ffffff;
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1); /* Sombra elegante */
+            text-align: center;
+            width: 90%;
+            max-width: 500px;
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 35px;
+            font-weight: 600;
+        }
+
+        .opcoes-simulacao {
+            display: flex;
+            flex-direction: column;
+            gap: 20px; /* Espaço entre os botões */
+        }
+
+        /* ------------------------------------- */
+        /* Estilo dos Botões (Links) */
+        /* ------------------------------------- */
+        .botao-simulacao {
+            display: block;
+            padding: 15px 25px;
+            color: white; /* Cor do texto */
+            text-decoration: none; /* Remove o sublinhado */
+            border-radius: 8px;
+            font-size: 1.2em;
+            font-weight: 700;
+            cursor: pointer;
+            border: none;
+            transition: background-color 0.3s ease, transform 0.2s ease; /* Efeito de transição suave */
+        }
+
+        /* Cores Iniciais dos Botões */
+        .eletrico {
+            background-color: #007bff; /* Azul vibrante */
+        }
+        .equipotencial {
+            background-color: #28a745; /* Verde elegante */
+        }
+        .magnetico {
+            background-color: #dc3545; /* Vermelho forte */
+        }
+
+        /* ------------------------------------- */
+        /* Interatividade (Efeito Hover) */
+        /* ------------------------------------- */
+
+        /* Efeito ao passar o mouse: a cor muda e o botão "levanta" um pouco */
+        .botao-simulacao:hover {
+            transform: translateY(-3px); /* Levanta o botão */
+            box-shadow: 0 8px 15px rgba(0, 0, 0, 0.2); /* Adiciona uma sombra maior */
+        }
+
+        /* Mudança de cor no hover */
+        .eletrico:hover {
+            background-color: #0056b3; /* Azul mais escuro */
+        }
+        .equipotencial:hover {
+            background-color: #1e7e34; /* Verde mais escuro */
+        }
+        .magnetico:hover {
+            background-color: #c82333; /* Vermelho mais escuro */
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>Escolha a Simulação Desejada</h1>
+
+        <div class="opcoes-simulacao">
+            <a href="campo_eletrico.html" class="botao-simulacao eletrico">
+                Simulação Campo Elétrico
+            </a>
+
+            <a href="campo_equipotencial_interativo.html" class="botao-simulacao equipotencial">
+                Campo Equi Potencial
+            </a>
+
+            <a href="campo_magnetico.html" class="botao-simulacao magnetico">
+                Simulação Campo Magnético
+            </a>
+        </div>
+    </div>
+
+</body>
+</html>

@@ -1,0 +1,687 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simulação Campo Elétrico | Detalhes</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        /* ------------------------------------- */
+        /* Estilos Gerais e Layout de 3 Colunas */
+        /* ------------------------------------- */
+        body {
+            font-family: 'Inter', sans-serif;
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            background-color: #f4f4f9;
+        }
+
+        .menu-link {
+            display: block;
+            padding: 15px;
+            background-color: #343a40;
+            color: white;
+            text-align: center;
+            text-decoration: none;
+            font-weight: bold;
+            transition: background-color 0.3s;
+        }
+        .menu-link:hover {
+            background-color: #1d2124;
+        }
+
+        .main-content {
+            display: flex;
+            flex-grow: 1;
+        }
+        
+        /* Estilo para as três colunas */
+        .coluna {
+            flex: 1; 
+            padding: 20px;
+            box-sizing: border-box;
+            overflow-y: auto;
+            border-right: 1px solid #ccc;
+        }
+        /* Remove a borda da última coluna */
+        .coluna:last-child {
+            border-right: none;
+        }
+
+        /* Cores de fundo para as colunas */
+        .coluna-midia {
+            background-color: #f8f9fa; /* Cinza claro */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .coluna-simulacao {
+            background-color: #e9ecef; /* Cinza um pouco mais escuro */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .coluna-explicacao {
+            background-color: #ffffff; /* Branco */
+        }
+        
+        /* ------------------------------------- */
+        /* Responsividade: 3 colunas em desktop, empilhadas em mobile */
+        /* ------------------------------------- */
+        @media (max-width: 992px) { /* Ponto de quebra para telas menores/tablets */
+            .main-content {
+                flex-direction: column;
+            }
+            .coluna {
+                 border-right: none;
+                 border-bottom: 2px solid #ccc; /* Linha divisória horizontal em mobile */
+            }
+            .coluna:last-child {
+                border-bottom: none;
+            }
+        }
+
+
+        /* ------------------------------------- */
+        /* Estilos de Componentes */
+        /* ------------------------------------- */
+
+        h2 {
+            text-align: center;
+            color: #007bff;
+            border-bottom: 2px solid #007bff;
+            padding-bottom: 10px;
+            margin-top: 0;
+            width: 100%;
+            margin-bottom: 20px;
+        }
+        
+        /* Estilos para o Canvas da Simulação */
+        canvas {
+            border: 1px solid #ddd;
+            background-color: #ffffff; /* Fundo branco para a simulação */
+            border-radius: 8px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            max-width: 100%;
+        }
+
+        /* Estilo para o fluxograma (REMOVIDO IMG) */
+        
+        .legenda {
+            margin-top: 15px;
+            font-size: 0.9em;
+            color: #555;
+            text-align: center;
+        }
+        
+        /* Descrição */
+        .simulacao-descricao, .descricao-fluxograma {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+            width: 100%;
+            text-align: left;
+        }
+        .simulacao-descricao h3, .descricao-fluxograma h3 {
+            margin-top: 0;
+            color: #333;
+            font-size: 1.1em;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 5px;
+        }
+        .simulacao-descricao p, .descricao-fluxograma p {
+            font-size: 0.95em;
+            color: #555;
+            margin-bottom: 8px;
+        }
+        
+        /* ---------------------------------------------------- */
+        /* Estilos do Vídeo Miniatura e Botão de Controle */
+        /* ---------------------------------------------------- */
+
+        #videoNarradorMini {
+            width: 150px; /* Tamanho da bolinha do vídeo */
+            height: 150px;
+            border-radius: 50%;
+            overflow: hidden;
+            border: 3px solid #007bff; /* Borda de destaque */
+            box-shadow: 0 0 15px rgba(0, 123, 255, 0.6);
+            transition: transform 0.3s ease;
+            z-index: 10;
+            margin-bottom: 20px;
+        }
+
+        #videoNarradorMini video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover; /* Garante que o vídeo preencha o círculo */
+        }
+        
+        /* Estilo do Botão de Play/Pause */
+        #btnControleNaracao {
+            display: block;
+            width: 100%;
+            max-width: 250px;
+            padding: 10px;
+            margin-top: 10px;
+            background-color: #28a745; /* Verde para Play */
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 1.1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        #btnControleNaracao.paused {
+            background-color: #ffc107; 
+            color: #333;
+        }
+        #btnControleNaracao.playing {
+            background-color: #dc3545; 
+        }
+        #btnControleNaracao:disabled {
+            background-color: #6c757d;
+            cursor: not-allowed;
+        }
+        
+        /* ---------------------------------------------------- */
+        /* ESTILOS DO FLUXOGRAMA (NOVO) */
+        /* ---------------------------------------------------- */
+        .flowchart-panel { 
+            min-width: 400px; 
+            background: #ffffff; 
+            padding: 0; /* Remove padding externo */
+            border-radius: 8px; 
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); 
+        } 
+        .flowchart-panel h3 { 
+            color: #00416A; 
+            margin-bottom: 20px; 
+            font-size: 24px; 
+            text-align: center; 
+        } 
+        .flow-step {
+            background: #f8f9fa;
+            border-left: 4px solid #007bff; /* Cor da linha vertical (Azul para Elétrico) */
+            padding: 15px 20px;
+            margin: 25px auto;
+            border-radius: 0 8px 8px 0;
+            position: relative;
+            max-width: 90%;
+            text-align: center;
+        }
+        .flow-step::after {
+            content: '↓';
+            position: absolute;
+            bottom: -28px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 24px;
+            color: #ccc;
+            font-weight: bold;
+        }
+        .flow-step:last-child::after { content: ''; }
+        .flow-step strong { color: #007bff; display: block; margin-bottom: 8px; font-size: 1.1em; }
+        .flow-step p { font-size: 0.95em; line-height: 1.6; color: #555; }
+        
+        /* Ajuste do padding na coluna para comportar o novo painel */
+        .coluna-explicacao {
+            padding: 20px 0; 
+        }
+
+
+    </style>
+</head>
+<body>
+
+    <a href="index.html" class="menu-link">← Voltar para o Menu Principal</a>
+
+    <div class="main-content">
+        
+        <div class="coluna coluna-midia">
+            <h2>Personagem e Narração TTS</h2>
+            
+            <div id="videoNarradorMini">
+                <video id="videoProfessor" loop muted autoplay width="100%" height="100%">
+                    <source src="video_professor.mp4" type="video/mp4">
+                    Seu navegador não suporta a tag de vídeo.
+                </video>
+            </div>
+            
+            <button id="btnControleNaracao" class="paused" disabled>
+                <span class="play-icon">▶</span> Carregando Narração...
+            </button>
+            
+            <p style="text-align: center; margin-top: 15px; font-size: 0.9em; color: #555;">
+                O vídeo acima é um elemento visual em loop. Use o botão para iniciar a narração por voz (TTS).
+            </p>
+
+        </div>
+
+        <div class="coluna coluna-simulacao">
+            <h2>Simulação Interativa de Campo Elétrico</h2>
+            
+            <canvas id="eFieldCanvas"></canvas>
+
+            <p class="legenda">As partículas se movem harmonicamente, e as setas representam o vetor Campo Elétrico E vetor resultante em cada ponto.</p>
+            
+            <div class="simulacao-descricao">
+                <h3>O que você está observando:</h3>
+                <p><strong>Partículas:</strong> No centro, há um <b>Próton</b> (carga positiva, cor vermelha) cercado por dois <b>Elétrons</b> (carga negativa, cor azul).</p>
+                <p><strong>Movimento:</strong> As partículas realizam um movimento de <b>vibração harmônica</b> ao redor de um triângulo equilátero imaginário, simulando um sistema que não está em equilíbrio estático perfeito.</p>
+                <p><strong>Campo Elétrico E:</strong> As pequenas setas pretas cobrem a área e representam a direção e a intensidade do campo elétrico <b>resultante</b> em cada ponto do espaço.</p>
+                <ul>
+                    <li>As setas <b>apontam para fora</b> de cargas positivas (Próton).</li>
+                    <li>As setas <b>apontam para dentro</b> de cargas negativas (Elétrons).</li>
+                    <li>A intensidade da seta é calculada pela <b>superposição</b> dos campos gerados por todas as três partículas.</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="coluna coluna-explicacao">
+            
+            <h2>Fluxograma Explicativo: Campo Elétrico</h2>
+            
+            <div class="flowchart-panel">
+                <div class="flow-step">
+                    <strong>1. Carga Fonte (Q)</strong>
+                    <p>Toda carga elétrica (Q) cria uma perturbação no espaço ao seu redor.</p>
+                </div>
+                <div class="flow-step">
+                    <strong>2. Origem do Campo (E)</strong>
+                    <p>O Campo Elétrico (E, grandeza vetorial) é essa perturbação. Ele existe em torno da Carga Fonte.</p>
+                </div>
+                <div class="flow-step">
+                    <strong>3. Testando o Campo (Carga de Prova)</strong>
+                    <p>Para medir (E), usamos uma Carga de Prova (q0) que sente uma Força Elétrica (F, vetor).</p>
+                </div>
+                <div class="flow-step">
+                    <strong>4. Definição Formal</strong>
+                    <p>O Campo Elétrico é a razão entre a Força e a Carga de Prova: E = F / q0. (Unidade: N/C).</p>
+                </div>
+                <div class="flow-step">
+                    <strong>5. Regra de Direção</strong>
+                    <p>O campo sempre aponta para fora de cargas positivas (Q > 0) e para dentro de cargas negativas (Q < 0).</p>
+                </div>
+                <div class="flow-step">
+                    <strong>6. Superposição</strong>
+                    <p>Se houver múltiplas cargas, o campo total (E total) é a soma vetorial de todos os campos individuais.</p>
+                </div>
+            </div>
+        </div>
+        
+    </div>
+
+    <script>
+        // --- Constantes de Configuração (Simulação de Campo E.) ---
+        const LARGURA_JANELA = 500;
+        const ALTURA_JANELA = 500;
+        const RAIO_PARTICULA_BASE = 15;
+        const RAIO_BASE_TRIANGULO = 100; // Distância do centro
+        const AMPLITUDE_VIBRACAO = 30; // Amplitude da vibração
+        const FREQUENCIA = 0.0015; // Velocidade da vibração
+
+        // Cores
+        const FUNDO_COR = "#FFFFFF"; 
+        const VERMELHO_PRINCIPAL = "#FF3333"; 
+        const AZUL_PRINCIPAL = "#3366FF"; 
+        const COR_CAMPO = "#222222"; 
+        const CORES_BRILHO = {
+            [VERMELHO_PRINCIPAL]: ["rgba(255, 204, 204, 0.5)", "rgba(255, 136, 136, 0.5)", "rgba(255, 68, 68, 0.5)"], 
+            [AZUL_PRINCIPAL]: ["rgba(204, 204, 255, 0.5)", "rgba(136, 136, 255, 0.5)", "rgba(68, 68, 255, 0.5)"] 
+        };
+
+        // Dados das Partículas
+        const PARTICULAS_DADOS = [
+            {"nome": "Próton", "carga": "+", "valor_carga": 1, "cor_hex": VERMELHO_PRINCIPAL, "angulo_rad": Math.PI * 3 / 2}, // 270 deg
+            {"nome": "Elétron 1", "carga": "-", "valor_carga": -1, "cor_hex": AZUL_PRINCIPAL, "angulo_rad": Math.PI / 6},      // 30 deg
+            {"nome": "Elétron 2", "carga": "-", "valor_carga": -1, "cor_hex": AZUL_PRINCIPAL, "angulo_rad": Math.PI * 5 / 6},  // 150 deg
+        ];
+
+        // Constantes do Campo Elétrico
+        const PONTOS_CAMPO_LADO = 16; // Grade de 16x16 pontos (menos intenso que 20x20)
+        const K_ELETROSTATICA = 50000; // Constante de escala reduzida para JS
+        const LARGURA_CAMPO = 2;
+
+        let canvas;
+        let ctx;
+        let centroX;
+        let centroY;
+        let particulasObj = [];
+        let startTime;
+        let animationFrameId;
+
+        // --- Variáveis de Narração (Text-to-Speech) ---
+        const videoElement = document.getElementById('videoProfessor');
+        const btnControle = document.getElementById('btnControleNaracao');
+
+        let isSpeaking = false;
+        let currentUtteranceIndex = 0;
+        let portugueseVoice = null; 
+
+        const SCRIPT_NARRACAO = [
+            "Bem-vindo à Simulação de Campo Elétrico.",
+            "O Campo Elétrico é uma grandeza vetorial que surge ao redor de uma carga fonte, como este Próton positivo no centro.",
+            "As setas pretas representam o vetor E, Campo Elétrico, que aponta para fora de cargas positivas e para dentro de cargas negativas, como estes dois Elétrons.",
+            "Para calcular o Campo Elétrico em um ponto, usamos a fórmula E igual a F sobre q zero, onde F é a força elétrica sobre uma carga de prova q zero, e a unidade é Newton por Coulomb.",
+            "Nesta simulação, as partículas se movem, resultando em um campo E dinâmico, que é a soma vetorial dos campos de todas as três partículas. Observe a superposição!",
+            "Obrigado por assistir."
+        ];
+        
+        let utteranceArray = [];
+        let voicesLoaded = false;
+        
+        function setupVoices() {
+            if (!('speechSynthesis' in window)) {
+                btnControle.textContent = "TTS Indisponível";
+                btnControle.disabled = true;
+                return;
+            }
+            if (window.speechSynthesis.onvoiceschanged !== undefined) {
+                 window.speechSynthesis.onvoiceschanged = loadVoices;
+            }
+            loadVoices(); 
+        }
+
+        function loadVoices() {
+            const voices = window.speechSynthesis.getVoices();
+            
+            if (voices.length === 0 && !voicesLoaded) {
+                 setTimeout(loadVoices, 200);
+                 return;
+            }
+            
+            if (voicesLoaded) return; 
+
+            portugueseVoice = voices.find(voice => voice.lang.includes('pt-BR') || voice.lang.includes('pt-PT'));
+
+            utteranceArray = [];
+            SCRIPT_NARRACAO.forEach((texto, index) => {
+                const utterance = new SpeechSynthesisUtterance(texto);
+                utterance.lang = 'pt-BR';
+                if (portugueseVoice) {
+                    utterance.voice = portugueseVoice;
+                }
+                utterance.pitch = 1; 
+                utterance.rate = 1.1; 
+                
+                // Correção: Configurar onend para progredir e iniciar a próxima
+                utterance.onend = () => {
+                    currentUtteranceIndex++;
+                    if (currentUtteranceIndex < utteranceArray.length) {
+                        window.speechSynthesis.speak(utteranceArray[currentUtteranceIndex]);
+                    } else {
+                        handleNaracaoConcluida();
+                    }
+                };
+                utteranceArray.push(utterance);
+            });
+            
+            voicesLoaded = true;
+            console.log("Vozes TTS carregadas. Narração pronta para interagir.");
+            
+            btnControle.textContent = "▶ PLAY Narração";
+            btnControle.disabled = false;
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+             setupVoices();
+             if (videoElement) {
+                 videoElement.play().catch(e => console.log("Vídeo não iniciado automaticamente. O usuário precisa interagir."));
+             }
+        });
+        
+        function handleNaracaoConcluida() {
+            window.speechSynthesis.cancel();
+            isSpeaking = false;
+            currentUtteranceIndex = 0; // Reinicia o índice
+            
+            btnControle.textContent = "▶ REINICIAR Narração";
+            btnControle.classList.remove('playing');
+            btnControle.classList.add('paused');
+            btnControle.disabled = false;
+        }
+
+        function pausarNaracaoEVideo() {
+            if (isSpeaking && window.speechSynthesis.speaking) {
+                window.speechSynthesis.pause();
+                isSpeaking = false;
+                
+                btnControle.textContent = "▶ CONTINUAR Narração";
+                btnControle.classList.remove('playing');
+                btnControle.classList.add('paused');
+            }
+        }
+        
+        function iniciarOuContinuarNaracaoEVideo() {
+            if (!voicesLoaded || btnControle.disabled) {
+                 return;
+            }
+
+            if (isSpeaking && window.speechSynthesis.speaking) {
+                // Se está falando, pausa
+                pausarNaracaoEVideo();
+            } else {
+                // Se está pausada ou no início/fim
+                isSpeaking = true;
+                btnControle.textContent = "❚❚ PAUSE Narração";
+                btnControle.classList.remove('paused');
+                btnControle.classList.add('playing');
+
+                if (window.speechSynthesis.paused) {
+                    // Se estava pausada, retoma
+                    window.speechSynthesis.resume();
+                } else {
+                    // Se a fila acabou ou é a primeira vez, reinicia
+                    if (currentUtteranceIndex >= utteranceArray.length) {
+                         currentUtteranceIndex = 0; 
+                         window.speechSynthesis.cancel(); // Cancela o estado "concluído" ou pendente
+                    }
+                    
+                    // Cancela qualquer fala anterior, caso o usuário tenha trocado de aba/simulação
+                    window.speechSynthesis.cancel();
+                    
+                    // Inicia a partir do índice atual (0 ou o ponto de pausa)
+                    if (utteranceArray[currentUtteranceIndex]) {
+                        window.speechSynthesis.speak(utteranceArray[currentUtteranceIndex]);
+                    }
+                }
+            }
+        }
+        
+        // --- Classe Particula (Em JavaScript) ---
+        class Particula {
+            constructor(centro_x, centro_y, dados_particula) {
+                this.centro_x = centro_x;
+                this.centro_y = centro_y;
+                this.angulo_base = dados_particula.angulo_rad;
+                this.cor_principal = dados_particula.cor_hex;
+                this.carga = dados_particula.carga;
+                this.valor_carga = dados_particula.valor_carga;
+                
+                this.x = 0;
+                this.y = 0;
+            }
+            
+            calcularPosicao(tempo_ms) {
+                const variacao_seno = Math.sin(tempo_ms * FREQUENCIA);
+                const raio_atual = RAIO_BASE_TRIANGULO + variacao_seno * AMPLITUDE_VIBRACAO;
+                
+                this.x = this.centro_x + raio_atual * Math.cos(this.angulo_base);
+                this.y = this.centro_y + raio_atual * Math.sin(this.angulo_base);
+            }
+
+            desenhar() {
+                // Desenha o efeito de brilho
+                CORES_BRILHO[this.cor_principal].forEach((cor_brilho, i) => {
+                    const raio_brilho = RAIO_PARTICULA_BASE + (i + 1) * 5;
+                    ctx.beginPath();
+                    ctx.arc(this.x, this.y, raio_brilho, 0, 2 * Math.PI);
+                    ctx.strokeStyle = cor_brilho;
+                    ctx.lineWidth = 1;
+                    ctx.stroke();
+                });
+
+                // Desenha o círculo principal
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, RAIO_PARTICULA_BASE, 0, 2 * Math.PI);
+                ctx.fillStyle = this.cor_principal;
+                ctx.fill();
+                ctx.strokeStyle = "black";
+                ctx.lineWidth = 1.5;
+                ctx.stroke();
+                
+                // Adiciona o símbolo de carga
+                ctx.fillStyle = "white";
+                ctx.font = "bold 14px Inter";
+                ctx.textAlign = "center";
+                ctx.textBaseline = "middle";
+                ctx.fillText(this.carga, this.x, this.y);
+            }
+        }
+
+        // --- Funções de Campo Elétrico ---
+
+        function desenharVetor(startX, startY, endX, endY) {
+            // Desenha a linha
+            ctx.beginPath();
+            ctx.moveTo(startX, startY);
+            ctx.lineTo(endX, endY);
+            ctx.strokeStyle = COR_CAMPO;
+            ctx.lineWidth = LARGURA_CAMPO;
+            ctx.stroke();
+            
+            // Desenha a ponta da seta
+            const angle = Math.atan2(endY - startY, endX - startX);
+            const size = 5;
+            
+            ctx.fillStyle = COR_CAMPO;
+            ctx.save();
+            ctx.translate(endX, endY);
+            ctx.rotate(angle);
+            
+            ctx.beginPath();
+            ctx.moveTo(0, 0);
+            ctx.lineTo(-size, -size / 2);
+            ctx.lineTo(-size, size / 2);
+            ctx.closePath();
+            ctx.fill();
+            
+            ctx.restore();
+        }
+
+        function calcularEDesenharCampo() {
+            const stepX = LARGURA_JANELA / PONTOS_CAMPO_LADO;
+            const stepY = ALTURA_JANELA / PONTOS_CAMPO_LADO;
+            
+            for (let i = 0; i < PONTOS_CAMPO_LADO; i++) {
+                for (let j = 0; j < PONTOS_CAMPO_LADO; j++) {
+                    const px = i * stepX + stepX / 2;
+                    const py = j * stepY + stepY / 2;
+                    
+                    let Ex = 0;
+                    let Ey = 0;
+                    
+                    // Superposição de Campos
+                    for (const p of particulasObj) {
+                        const dx = px - p.x;
+                        const dy = py - p.y;
+                        
+                        const distSq = dx * dx + dy * dy;
+                        const dist = Math.sqrt(distSq);
+                        
+                        const minDist = RAIO_PARTICULA_BASE * 1.5; 
+                        if (dist < minDist) continue; 
+                        
+                        // E = k * q / r^2
+                        const E_magnitude = (K_ELETROSTATICA * p.valor_carga) / distSq;
+                        
+                        // Componentes do campo (vetor unitário * magnitude)
+                        Ex += E_magnitude * (dx / dist);
+                        Ey += E_magnitude * (dy / dist);
+                    }
+                    
+                    if (Ex !== 0 || Ey !== 0) {
+                        const E_total_magnitude = Math.sqrt(Ex * Ex + Ey * Ey);
+                        
+                        // Escala o comprimento da seta
+                        const MAX_LENGTH = stepX * 0.4;
+                        // O fator de escala foi ajustado para manter os vetores visíveis
+                        const length_scale = Math.min(E_total_magnitude * 0.00000001, MAX_LENGTH); 
+                        
+                        const endX = px + (Ex / E_total_magnitude) * length_scale;
+                        const endY = py + (Ey / E_total_magnitude) * length_scale;
+                        
+                        desenharVetor(px, py, endX, endY);
+                    }
+                }
+            }
+        }
+
+        // --- Loop Principal da Animação ---
+        function animar(tempoAtual) {
+            const tempo_ms = tempoAtual - startTime;
+            
+            // Limpa o canvas
+            ctx.fillStyle = FUNDO_COR;
+            ctx.fillRect(0, 0, LARGURA_JANELA, ALTURA_JANELA);
+
+            // 1. Atualiza a posição das partículas
+            for (const p of particulasObj) {
+                p.calcularPosicao(tempo_ms);
+            }
+            
+            // 2. Calcula e desenha o campo (antes das partículas, para que as partículas fiquem por cima)
+            calcularEDesenharCampo(); 
+            
+            // 3. Desenha as partículas nas novas posições
+            for (const p of particulasObj) {
+                p.desenhar();
+            }
+
+            // Agenda o próximo frame
+            animationFrameId = requestAnimationFrame(animar);
+        }
+
+        // --- Inicialização da Simulação Interativa ---
+        function iniciarSimulacao() {
+            canvas = document.getElementById('eFieldCanvas');
+            ctx = canvas.getContext('2d');
+            
+            // Define o tamanho do canvas
+            canvas.width = LARGURA_JANELA;
+            canvas.height = ALTURA_JANELA;
+            
+            centroX = LARGURA_JANELA / 2;
+            centroY = ALTURA_JANELA / 2;
+            
+            // Cria as partículas
+            particulasObj = PARTICULAS_DADOS.map(dados => new Particula(centroX, centroY, dados));
+
+            startTime = performance.now();
+            
+            // Inicia o loop de animação da simulação interativa
+            if (animationFrameId) {
+                cancelAnimationFrame(animationFrameId);
+            }
+            animationFrameId = requestAnimationFrame(animar);
+            
+            // Configura o listener do botão
+            btnControle.addEventListener('click', iniciarOuContinuarNaracaoEVideo);
+        }
+
+        // Inicia a simulação quando a página estiver totalmente carregada
+        window.onload = iniciarSimulacao;
+
+    </script>
+
+</body>
+</html>
