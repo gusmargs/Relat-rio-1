@@ -3,112 +3,736 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Menu de Simulações de Física</title>
+    <title>Motor 3D - Vetor B Centralizado e Forças Rotacionais</title>
     
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three/examples/js/controls/OrbitControls.js"></script>
+    
+    <script>
+        MathJax = {
+            tex: {
+                inlineMath: [['$', '$'], ['\\(', '\\)']],
+                displayMath: [['$$', '$$'], ['\\[', '\\]']],
+                processEnvironments: true
+            },
+            options: {
+                ignoreHtmlClass: 'tex2jax_ignore',
+                processHtmlClass: 'tex2jax_process'
+            },
+            startup: {
+                ready: () => {
+                    MathJax.startup.defaultReady();
+                    MathJax.typeset();
+                }
+            }
+        };
+    </script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
     <style>
-        /* ------------------------------------- */
-        /* Estilos Gerais e Centralização */
-        /* ------------------------------------- */
+        /* [Estilos CSS - Alinhamento Otimizado pela Coluna 1] */
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #f0f2f5; /* Fundo suave */
-            display: flex;
-            justify-content: center; /* Centraliza horizontalmente */
-            align-items: center; /* Centraliza verticalmente */
-            min-height: 100vh; /* Garante que ocupe a altura total da tela */
-            margin: 0;
-        }
-
-        .container {
-            background-color: #ffffff;
-            padding: 40px;
-            border-radius: 12px;
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1); /* Sombra elegante */
-            text-align: center;
-            width: 90%;
-            max-width: 500px;
-        }
-
-        h1 {
-            color: #333;
-            margin-bottom: 35px;
-            font-weight: 600;
-        }
-
-        .opcoes-simulacao {
             display: flex;
             flex-direction: column;
-            gap: 20px; /* Espaço entre os botões */
+            align-items: center;
+            padding: 20px;
+            background-color: #f0f0f5;
+            color: #333;
+            margin: 0;
+        }
+        .main-container {
+            display: grid; 
+            grid-template-columns: 2fr 1fr 1fr; 
+            width: 95%;
+            max-width: 1600px;
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+            gap: 30px;
+            /* align-items: start garante que todos comecem alinhados ao topo */
+            align-items: start; 
+        }
+        .left-panel {
+            grid-column: 1 / 2;
+            display: flex;
+            flex-direction: column;
+            /* Esta coluna define a altura alvo para as outras, via JS. */
+        }
+        
+        /* CONTROLS PANEL: Altura Fixa (via JS) e Flexbox para Scroll */
+        .controls-panel {
+            grid-column: 2 / 3; 
+            min-width: 300px;
+            padding: 0 20px 0 20px; 
+            display: flex;
+            flex-direction: column; 
+            overflow: hidden; /* Oculta o scroll principal */
+            background-color: white; 
+            border-radius: 10px; 
+            box-shadow: 0 0 10px rgba(0,0,0,0.05); 
+            /* ALTURA SERÁ DEFINIDA POR JS AQUI (height) */
+            height: auto; 
+        }
+        
+        /* Conteúdo rolável do painel de controle */
+        .controls-content {
+            flex-grow: 1; 
+            overflow-y: auto; /* Permite scroll se o conteúdo exceder o espaço */
+            padding-bottom: 20px;
+            margin: 0 -20px; 
+            padding-left: 20px; 
+            padding-right: 20px; 
+            padding-top: 1px; 
+        }
+        
+        /* LEIS DE MAXWELL: Altura Fixa (via JS) e Scroll Direto */
+        .right-panel {
+            grid-column: 3 / 4; 
+            background-color: #e9f5f9;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: inset 0 0 10px rgba(0,0,0,0.05);
+            min-width: 300px;
+            overflow-y: auto; /* Scroll aplicado diretamente aqui */
+            /* ALTURA SERÁ DEFINIDA POR JS AQUI (height) */
+            height: auto; 
+        }
+        
+        /* O botão Reiniciar é fixo na base do painel de controle */
+        #resetButton { 
+            background-color: #1d3557; 
+            color: white; 
+            margin-top: 10px; 
+            margin-bottom: 20px; 
+            padding: 10px 8px;
+            width: 100%;
+            border: none;
+            border-radius: 5px;
+            font-weight: bold;
+            flex-shrink: 0; 
+        }
+        
+        /* Ajustes menores de margem/padding */
+        .controls-panel h2 {
+            margin: 20px 0 5px 0;
+        }
+        .controls-content p:first-of-type {
+            margin-top: 0;
         }
 
-        /* ------------------------------------- */
-        /* Estilo dos Botões (Links) */
-        /* ------------------------------------- */
-        .botao-simulacao {
-            display: block;
-            padding: 15px 25px;
-            color: white; /* Cor do texto */
-            text-decoration: none; /* Remove o sublinhado */
+        /* O restante do CSS permanece o mesmo */
+        #three-container {
+            min-width: 500px;
+            height: 500px;
+            border: 2px solid #555;
+            background-color: #ffffff;
+            position: relative;
+            border-radius: 10px;
+            overflow: hidden;
+            margin-bottom: 20px;
+        }
+        h2, .right-panel h3 {
+            color: #1d3557;
+            border-bottom: 2px solid #457b9d;
+            padding-bottom: 5px;
+            margin-top: 0;
+        }
+        .control-group {
+            margin: 15px 0;
+            padding: 12px;
+            border: 1px solid #a8dadc;
             border-radius: 8px;
-            font-size: 1.2em;
-            font-weight: 700;
+            background-color: #f1faee;
+        }
+        .control-group button {
+            margin-top: 10px;
+            padding: 8px;
+            width: 100%;
             cursor: pointer;
             border: none;
-            transition: background-color 0.3s ease, transform 0.2s ease; /* Efeito de transição suave */
+            border-radius: 5px;
+            font-weight: bold;
         }
+        .btn-polarity { background-color: #e63946; color: white; }
+        .btn-polarity:hover { background-color: #d62f3b; }
+        .btn-magnets { background-color: #457b9d; color: white; }
+        .btn-magnets:hover { background-color: #3a6a8b; }
 
-        /* Cores Iniciais dos Botões */
-        .eletrico {
-            background-color: #007bff; /* Azul vibrante */
-        }
-        .equipotencial {
-            background-color: #28a745; /* Verde elegante */
-        }
-        .magnetico {
-            background-color: #dc3545; /* Vermelho forte */
-        }
+        #pauseButton { background-color: #457b9d; color: white; margin-bottom: 10px; }
+        #pauseButton:hover { background-color: #3a6a8b; }
 
-        /* ------------------------------------- */
-        /* Interatividade (Efeito Hover) */
-        /* ------------------------------------- */
+        .label-value {
+            font-weight: bold;
+            color: #e63946;
+            display: block;
+            margin-top: 5px;
+            font-size: 1.1em;
+        }
+        #resetButton:hover { background-color: #1a2c47; }
+        .current-positive { color: #008000; font-weight: bold; }
+        .current-negative { color: #e63946; font-weight: bold; }
 
-        /* Efeito ao passar o mouse: a cor muda e o botão "levanta" um pouco */
-        .botao-simulacao:hover {
-            transform: translateY(-3px); /* Levanta o botão */
-            box-shadow: 0 8px 15px rgba(0, 0, 0, 0.2); /* Adiciona uma sombra maior */
+        /* Estilo da Legenda */
+        #legenda-tabela {
+            background-color: rgba(255, 255, 255, 0.9);
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            padding: 10px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            font-size: 0.9em;
         }
-
-        /* Mudança de cor no hover */
-        .eletrico:hover {
-            background-color: #0056b3; /* Azul mais escuro */
+        #legenda-tabela table {
+            width: 100%;
+            border-collapse: collapse;
         }
-        .equipotencial:hover {
-            background-color: #1e7e34; /* Verde mais escuro */
+        #legenda-tabela th, #legenda-tabela td {
+            padding: 5px;
+            text-align: left;
+            border-bottom: 1px solid #eee;
         }
-        .magnetico:hover {
-            background-color: #c82333; /* Vermelho mais escuro */
+        .color-box {
+            display: inline-block;
+            width: 15px;
+            height: 15px;
+            border-radius: 3px;
+            margin-right: 5px;
+        }
+        /* Estilos para Leis de Maxwell */
+        .maxwell-law {
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 1px dashed #457b9d;
+        }
+        .maxwell-law p {
+            font-size: 0.95em;
+        }
+        .maxwell-law code {
+            display: block;
+            background-color: #fff;
+            padding: 10px;
+            border: 1px solid #a8dadc;
+            border-radius: 5px;
+            overflow-x: auto;
+            margin: 10px 0;
+            text-align: center; 
+        }
+        .maxwell-law strong {
+            color: #e63946; 
         }
     </style>
 </head>
 <body>
 
-    <div class="container">
-        <h1>Escolha a Simulação Desejada</h1>
+<div class="main-container">
 
-        <div class="opcoes-simulacao">
-            <a href="campo_eletrico.html" class="botao-simulacao eletrico">
-                Simulação Campo Elétrico
-            </a>
+    <div class="left-panel">
+        <div id="three-container"></div>
 
-            <a href="campo_equipotencial_interativo.html" class="botao-simulacao equipotencial">
-                Campo Equi Potencial
-            </a>
-
-            <a href="campo_magnetico.html" class="botao-simulacao magnetico">
-                Simulação Campo Magnético
-            </a>
+        <div id="legenda-tabela">
+            <h4>Legenda de Vetores</h4>
+            <table>
+                <tr>
+                    <td><span class="color-box" style="background-color: #00ff00;"></span></td>
+                    <th>Campo Magnético (vetor B)</th>
+                    <td>Seta Verde. Sempre de N (vermelho) para S (azul).</td>
+                </tr>
+                <tr>
+                    <td><span class="color-box" style="background-color: #8B4513;"></span></td>
+                    <th>Força de Lorentz (vetor F)</th>
+                    <td>Seta Marrom. Direção: F ∝ I x B.</td>
+                </tr>
+                <tr>
+                    <td><span class="color-box" style="background-color: #4a4a4a;"></span>
+                    <th>Direção de Giro</th>
+                    <td>Seta Cinza. Mostra o sentido do Torque Líquido.</td>
+                </tr>
+                <tr>
+                    <td><span class="color-box" style="background-color: #008000;"></span></td>
+                    <th>Corrente Positiva (I > 0)</th>
+                    <td>Fios Verdes.</td>
+                </tr>
+                <tr>
+                    <td><span class="color-box" style="background-color: #e63946;"></span></td>
+                    <th>Corrente Negativa (I < 0)</th>
+                    <td>Fios Vermelhos.</td>
+                </tr>
+            </table>
         </div>
     </div>
+
+    <div class="controls-panel">
+        <h2 style="margin-top: 20px;">Simulação Eletromagnética Funcional (3D)</h2>
+        <div class="controls-content">
+            <p style="margin-top: 0;">Giro, Força (F) e Corrente (I) visíveis. Ajuste V e B para ver a Força.</p>
+
+            <div class="control-group">
+                <button id="pauseButton" onclick="togglePause()">Pausar Simulação</button>
+            </div>
+
+            <div class="control-group">
+                <label for="tensao">Tensão Aplicada (V):</label>
+                <input type="range" id="tensao" min="0" max="100" value="50" step="1" oninput="updateSimulation()">
+                <span class="label-value" id="valorTensao">50 V</span>
+                <button class="btn-polarity" onclick="inverterPolaridade()">Inverter Polaridade da Tensão (I)</button>
+            </div>
+
+            <div class="control-group">
+                <label for="campoMag">Campo Magnético (B):</label>
+                <input type="range" id="campoMag" min="0.1" max="2.0" value="1.0" step="0.1" oninput="updateSimulation()">
+                <span class="label-value" id="valorCampoMag">1.0 T</span>
+                <button class="btn-magnets" onclick="inverterImas()">Inverter Polos Magnéticos (B)</button>
+            </div>
+
+            <div class="control-group">
+                <label for="friccao">Constante de Atrito (K_friccao):</label>
+                <input type="range" id="friccao" min="0.0" max="1.0" value="0.3" step="0.05" oninput="updateSimulation()">
+                <span class="label-value" id="valorFriccao">0.30</span>
+            </div>
+            <div class="control-group">
+                <label for="velocidadeLimite">Fator de Velocidade Máxima (0.1 = Lento):</label>
+                <input type="range" id="velocidadeLimite" min="0.1" max="1.0" value="0.5" step="0.1" oninput="updateSimulation()">
+                <span class="label-value" id="valorVelocidadeLimite">0.5x</span>
+            </div>
+
+            <div class="control-group">
+                <h3>📊 Resultados e Lógica</h3>
+                <p><strong>Ângulo (Theta):</strong> <span id="anguloOutput" class="label-value">0.0 graus</span></p>
+                <p><strong>Velocidade Angular (Omega):</strong> <span id="velocidadeOutput" class="label-value">0.0 rad/s</span></p>
+                <p><strong>Corrente Líquida (I):</strong> <span id="correnteOutput"><span class="current-positive">0 A</span></span></p>
+                <p><strong>Torque Líquido (Tau net):</strong> <span id="torqueOutput" class="label-value">0 Nm</span></p>
+                <p><strong>FEM Induzida (FEMi):</strong> <span id="femOutput" class="label-value">0 V</span></p>
+            </div>
+        </div>
+        <button id="resetButton" onclick="resetSimulation()">Reiniciar e Desligar</button>
+    </div>
+
+    <div class="right-panel">
+        <h3>Explicação: As 4 Leis de Maxwell no Motor</h3>
+        <p>A operação do motor elétrico é uma aplicação direta das equações fundamentais do eletromagnetismo, desenvolvidas por James Clerk Maxwell. Estas equações, em sua forma integral, descrevem o comportamento dos campos elétricos ($\vec{E}$) e magnéticos ($\vec{B}$).</p>
+
+        <div class="maxwell-law">
+            <h4>1. Lei de Gauss para Eletricidade</h4>
+            <p>Descreve como as cargas elétricas (cargas estáticas) criam um campo elétrico. Na simulação, a <strong>tensão aplicada (V)</strong> e a <strong>corrente (I)</strong> representam a presença de cargas em movimento, que são a fonte da energia que impulsiona o motor.</p>
+            <p>Fórmula (Forma Integral):</p>
+            <code class="tex2jax_process">
+                $$\oint_S \vec{E} \cdot d\vec{A} = \frac{Q_{int}}{\varepsilon_0}$$
+            </code>
+            <p>O fluxo elétrico através de uma superfície fechada ($S$) é proporcional à carga elétrica ($Q_{int}$) contida no seu interior.</p>
+        </div>
+
+        <div class="maxwell-law">
+            <h4>2. Lei de Gauss para Magnetismo</h4>
+            <p>Afirma a inexistência de "monopolos magnéticos". O fluxo magnético líquido através de qualquer superfície fechada é sempre zero. Isso significa que as linhas de campo magnético ($\vec{B}$) são sempre contínuas (formam loops fechados), movendo-se do polo Norte para o Sul e retornando pelo interior do ímã. Você vê isto representado pelos ímãs <strong>Polo N (Vermelho)</strong> e <strong>Polo S (Azul)</strong> na simulação.</p>
+            <p>Fórmula (Forma Integral):</p>
+            <code class="tex2jax_process">
+                $$\oint_S \vec{B} \cdot d\vec{A} = 0$$
+            </code>
+        </div>
+
+        <div class="maxwell-law">
+            <h4>3. Lei de Faraday da Indução (Lei da Indução de Faraday-Maxwell)</h4>
+            <p>Descreve como a variação do fluxo magnético através de um circuito induz uma Força Eletromotriz (FEM), gerando corrente. Em um motor, este é o princípio da <strong>Contrafuerça Eletromotriz (FEMi)</strong>, que se opõe à tensão aplicada (Lei de Lenz), limitando a corrente e a velocidade. A simulação calcula a $FEM_i$ a partir da velocidade angular ($\omega$) e do campo magnético ($\vec{B}$).</p>
+            <p>Fórmula (Forma Integral):</p>
+            <code class="tex2jax_process">
+                $$\oint_C \vec{E} \cdot d\vec{l} = - \frac{d\Phi_B}{dt}$$
+            </code>
+            <p>No motor: $FEM_i = \text{Tensão Aplicada} - I \cdot R$</p>
+        </div>
+
+        <div class="maxwell-law">
+            <h4>4. Lei de Ampère-Maxwell</h4>
+            <p>Esta lei generalizada explica que campos magnéticos ($\vec{B}$) são gerados tanto por <strong>correntes elétricas (I)</strong> (Lei de Ampère original) quanto por campos elétricos variáveis no tempo (Corrente de Deslocamento). No motor, o torque de rotação é puramente devido ao termo da corrente elétrica:</p>
+            <p>A corrente ($I$) nos fios da bobina, em contato com o Campo Magnético ($\vec{B}$), gera a Força de Lorentz ($\vec{F}$), que se traduz em um <strong>Torque Líquido</strong> ($\vec{\tau}$), causando o movimento.</p>
+            <p>Fórmula (Forma Integral - Motor DC):</p>
+            <code class="tex2jax_process">
+                $$\oint_C \vec{B} \cdot d\vec{l} = \mu_0 I_{int} + \mu_0 \varepsilon_0 \frac{d\Phi_E}{dt}$$
+            </code>
+            <p>A força motriz é dada pela Força de Lorentz, essencial para o motor:</p>
+            <code class="tex2jax_process">
+                $$\vec{F} = I \cdot (\vec{L} \times \vec{B})$$
+            </code>
+        </div>
+
+    </div>
+</div>
+
+<script>
+    // --- FUNÇÃO PARA SINCRONIZAR ALTURAS VIA JAVASCRIPT ---
+    function syncPanelHeights() {
+        const leftPanel = document.querySelector('.left-panel');
+        const controlsPanel = document.querySelector('.controls-panel');
+        const rightPanel = document.querySelector('.right-panel');
+        
+        // Pequeno delay para garantir que todos os elementos e o Three.js sejam renderizados
+        setTimeout(() => {
+            // 1. Altura da coluna esquerda (Simulação + Legenda)
+            const leftHeight = leftPanel.offsetHeight;
+            
+            // 2. Get the vertical padding/border of the main container (30px top + 30px bottom)
+            const mainContainer = document.querySelector('.main-container');
+            const mainPaddingY = parseFloat(window.getComputedStyle(mainContainer).paddingTop) + 
+                                 parseFloat(window.getComputedStyle(mainContainer).paddingBottom);
+            
+            // 3. Altura Alvo dos painéis laterais (Altura do leftPanel + Padding do MainContainer)
+            const targetHeight = leftHeight + mainPaddingY;
+
+            // Aplica a altura alvo nos painéis laterais usando 'height' para forçar o tamanho exato.
+            controlsPanel.style.height = `${targetHeight}px`;
+            rightPanel.style.height = `${targetHeight}px`;
+            
+        }, 100); 
+    }
+
+    // --- CÓDIGO THREE.JS / SIMULAÇÃO (MANTIDO) ---
+    const R_bobina = 5;
+    const Inercia = 2;
+    const K_back_EMF = 0.05;
+    const K_torque_motor = 0.1;
+    const L_bobina_side = 4;
+    const W_bobina_top = 3;
+    const WIRE_THICKNESS = 0.15;
+    const HALF_WIDTH = W_bobina_top / 2;
+    const MAGNET_OFFSET = W_bobina_top + 1.5;
+    const MAGNET_POLE_WIDTH = 1.5;
+    const B_LENGTH_DISPLAY = W_bobina_top + 2;
+    const TEXT_Z_OFFSET = 1.2;
+    const TERMINAL_Y_OFFSET = -L_bobina_side / 2 - 1.5;
+    const STUB_LENGTH = 1.0;
+    let currentAngle = 0;
+    let angularVelocity = 0;
+    let lastTime = performance.now();
+    let isPositiveVoltage = true;
+    let isPositiveField = true;
+    let isPaused = false;
+    let lastCurrent = 0;
+    let lastNetTorque = 0;
+    let lastFEMi = 0;
+    let lastFriction = 0.3; 
+    let scene, camera, renderer, controls;
+    let rotorGroup;
+    let magnetN_mesh, magnetS_mesh;
+    let fieldArrow, forceArrowLeft, forceArrowRight, rotationDirectionArrow;
+    let wireLeft_mesh, wireRight_mesh, wireTop_mesh, wireBottom_mesh;
+    let textN_mesh, textS_mesh;
+    let textVPlus_mesh, textVMinus_mesh;
+    const container = document.getElementById('three-container');
+    function initThree() {
+        scene = new THREE.Scene();
+        scene.background = new THREE.Color(0xf0f0f0);
+        camera = new THREE.PerspectiveCamera(75, container.clientWidth / container.clientHeight, 0.1, 1000);
+        camera.position.set(0, 5, 8);
+        renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(container.clientWidth, container.clientHeight);
+        container.appendChild(renderer.domElement);
+        controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+        controls.minDistance = 5;
+        controls.maxDistance = 20;
+        scene.add(new THREE.AmbientLight(0x404040, 2));
+        const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
+        directionalLight.position.set(5, 5, 5).normalize();
+        scene.add(directionalLight);
+        buildMotorModel();
+        buildVectorVisualizations();
+        updateSimulation();
+        document.getElementById('valorFriccao').textContent = parseFloat(document.getElementById('friccao').value).toFixed(2);
+        
+        syncPanelHeights(); 
+    }
+    function createTextMesh(text, color, position, scale = 1.5) {
+        const canvas = document.createElement('canvas');
+        const context = canvas.getContext('2d');
+        canvas.width = 128;
+        canvas.height = 128;
+        context.fillStyle = 'rgba(0,0,0,0)';
+        context.font = 'Bold 80px Arial';
+        context.fillStyle = color;
+        context.textAlign = 'center';
+        context.textBaseline = 'middle';
+        context.fillText(text, 64, 64);
+        const texture = new THREE.CanvasTexture(canvas);
+        const spriteMaterial = new THREE.SpriteMaterial({ map: texture, transparent: true });
+        const sprite = new THREE.Sprite(spriteMaterial);
+        sprite.scale.set(scale, scale, 1);
+        sprite.position.copy(position);
+        return sprite;
+    }
+    function buildMotorModel() {
+        const poleGeometry = new THREE.BoxGeometry(MAGNET_POLE_WIDTH, L_bobina_side + 2, 2);
+        magnetN_mesh = new THREE.Mesh(poleGeometry, new THREE.MeshPhongMaterial({ color: 0xcc0000 }));
+        magnetN_mesh.position.set(-MAGNET_OFFSET, 0, 0);
+        scene.add(magnetN_mesh);
+        magnetS_mesh = new THREE.Mesh(poleGeometry, new THREE.MeshPhongMaterial({ color: 0x0000cc }));
+        magnetS_mesh.position.set(MAGNET_OFFSET, 0, 0);
+        scene.add(magnetS_mesh);
+        rotorGroup = new THREE.Group();
+        scene.add(rotorGroup);
+        const wireMaterial = new THREE.MeshPhongMaterial({ color: 0xffa500 });
+        const sideWireGeometry = new THREE.CylinderGeometry(WIRE_THICKNESS, WIRE_THICKNESS, L_bobina_side, 8);
+        const topBottomWireGeometry = new THREE.CylinderGeometry(WIRE_THICKNESS, WIRE_THICKNESS, W_bobina_top, 8);
+        const stubGeometry = new THREE.CylinderGeometry(WIRE_THICKNESS, WIRE_THICKNESS, STUB_LENGTH, 8);
+        wireLeft_mesh = new THREE.Mesh(sideWireGeometry, wireMaterial);
+        wireLeft_mesh.position.set(-HALF_WIDTH, 0, 0);
+        rotorGroup.add(wireLeft_mesh);
+        wireRight_mesh = new THREE.Mesh(sideWireGeometry, wireMaterial);
+        wireRight_mesh.position.set(HALF_WIDTH, 0, 0);
+        rotorGroup.add(wireRight_mesh);
+        wireTop_mesh = new THREE.Mesh(topBottomWireGeometry, wireMaterial);
+        wireTop_mesh.rotation.z = Math.PI / 2;
+        wireTop_mesh.position.set(0, L_bobina_side / 2, 0);
+        rotorGroup.add(wireTop_mesh);
+        wireBottom_mesh = new THREE.Mesh(topBottomWireGeometry, wireMaterial);
+        wireBottom_mesh.rotation.z = Math.PI / 2;
+        wireBottom_mesh.position.set(0, -L_bobina_side / 2, 0);
+        rotorGroup.add(wireBottom_mesh);
+        const wireLeftBottomStub = new THREE.Mesh(stubGeometry, wireMaterial);
+        wireLeftBottomStub.position.set(-HALF_WIDTH, -L_bobina_side / 2 - STUB_LENGTH / 2, 0);
+        rotorGroup.add(wireLeftBottomStub);
+        const wireRightBottomStub = new THREE.Mesh(stubGeometry, wireMaterial);
+        wireRightBottomStub.position.set(HALF_WIDTH, -L_bobina_side / 2 - STUB_LENGTH / 2, 0);
+        rotorGroup.add(wireRightBottomStub);
+        textN_mesh = createTextMesh('N', '#FFFFFF', new THREE.Vector3(-MAGNET_OFFSET, 0, TEXT_Z_OFFSET));
+        scene.add(textN_mesh);
+        textS_mesh = createTextMesh('S', '#FFFFFF', new THREE.Vector3(MAGNET_OFFSET, 0, TEXT_Z_OFFSET));
+        scene.add(textS_mesh);
+        textVPlus_mesh = createTextMesh('V+', '#000000', new THREE.Vector3(-HALF_WIDTH - 0.5, TERMINAL_Y_OFFSET, 0), 1);
+        rotorGroup.add(textVPlus_mesh);
+        textVMinus_mesh = createTextMesh('V-', '#000000', new THREE.Vector3(HALF_WIDTH + 0.5, TERMINAL_Y_OFFSET, 0), 1);
+        rotorGroup.add(textVMinus_mesh);
+    }
+    function buildVectorVisualizations() {
+        const B_length = B_LENGTH_DISPLAY;
+        const B_origin = new THREE.Vector3(0, 0, 0);
+        const hexB = 0x00ff00;
+        fieldArrow = new THREE.ArrowHelper(new THREE.Vector3(1, 0, 0), B_origin, B_length, hexB, 0.7, 0.5);
+        fieldArrow.position.x = -B_length / 2;
+        scene.add(fieldArrow);
+        const lengthF = 2;
+        const hexF = 0x8B4513; 
+        forceArrowLeft = new THREE.ArrowHelper(new THREE.Vector3(0,0,1), new THREE.Vector3(-HALF_WIDTH, 0, 0), lengthF, hexF, 0.5, 0.3);
+        rotorGroup.add(forceArrowLeft);
+        forceArrowRight = new THREE.ArrowHelper(new THREE.Vector3(0,0,-1), new THREE.Vector3(HALF_WIDTH, 0, 0), lengthF, hexF, 0.5, 0.3);
+        rotorGroup.add(forceArrowRight);
+        const rotationDirGeom = new THREE.ConeGeometry(0.3, 0.8, 8);
+        rotationDirectionArrow = new THREE.Mesh(rotationDirGeom, new THREE.MeshBasicMaterial({ color: 0x4a4a4a }));
+        rotationDirectionArrow.position.y = L_bobina_side / 2 + 0.8;
+        rotationDirectionArrow.rotation.x = Math.PI / 2;
+        rotationDirectionArrow.visible = false;
+        rotorGroup.add(rotationDirectionArrow);
+    }
+    function togglePause() {
+        isPaused = !isPaused;
+        const button = document.getElementById('pauseButton');
+        if (isPaused) {
+            button.textContent = 'Continuar Simulação';
+            button.style.backgroundColor = '#008000';
+            updateVisuals(
+                parseFloat(document.getElementById('tensao').value) * (isPositiveVoltage ? 1 : -1),
+                parseFloat(document.getElementById('campoMag').value) * (isPositiveField ? 1 : -1),
+                lastCurrent, lastNetTorque
+            );
+        } else {
+            button.textContent = 'Pausar Simulação';
+            button.style.backgroundColor = '#457b9d';
+            lastTime = performance.now();
+        }
+    }
+    function runPhysicsSimulation(deltaTime) {
+        const V = parseFloat(document.getElementById('tensao').value) * (isPositiveVoltage ? 1 : -1);
+        const B = parseFloat(document.getElementById('campoMag').value) * (isPositiveField ? 1 : -1);
+        const K_friccao_dyn = parseFloat(document.getElementById('friccao').value);
+        document.getElementById('valorFriccao').textContent = K_friccao_dyn.toFixed(2);
+        if (isPaused) {
+            updateVisuals(V, B, lastCurrent, lastNetTorque); 
+            updateUI(currentAngle * 180 / Math.PI, angularVelocity, lastCurrent, lastNetTorque, lastFEMi, V, B);
+            return;
+        }
+        const R_val = R_bobina;
+        const speedFactor = parseFloat(document.getElementById('velocidadeLimite').value);
+        const sin_theta = Math.sin(currentAngle);
+        const cos_theta = Math.cos(currentAngle);
+        const FEM_i = K_back_EMF * B * L_bobina_side * HALF_WIDTH * angularVelocity * sin_theta;
+        const I = (V - FEM_i) / R_val;
+        let torque_motor_magnitude = K_torque_motor * Math.abs(I) * Math.abs(B) * L_bobina_side * HALF_WIDTH * Math.abs(cos_theta);
+        const torque_direction_factor = Math.sign(V) * Math.sign(B);
+        if (Math.abs(V) < 0.1) torque_motor_magnitude = 0;
+        const torque_friccao = K_friccao_dyn * angularVelocity;
+        let net_torque = (torque_direction_factor * torque_motor_magnitude) - torque_friccao;
+        const angularAcceleration = net_torque / Inercia;
+        angularVelocity += angularAcceleration * deltaTime;
+        const maxSpeed = 50 * speedFactor;
+        angularVelocity = Math.max(-maxSpeed, Math.min(angularVelocity, maxSpeed));
+        if (Math.abs(angularVelocity) < 0.2 && Math.abs(net_torque) < 0.05) {
+            angularVelocity = 0;
+            net_torque = 0;
+        }
+        currentAngle += angularVelocity * deltaTime;
+        currentAngle %= (2 * Math.PI);
+        lastCurrent = I;
+        lastNetTorque = net_torque;
+        lastFEMi = FEM_i;
+        rotorGroup.rotation.y = currentAngle;
+        updateVisuals(V, B, I, net_torque);
+        const angle_degrees = (currentAngle * 180 / Math.PI) % 360;
+        updateUI(angle_degrees, angularVelocity, I, net_torque, FEM_i, V, B);
+    }
+    function updateVisuals(V_current, B_current, I_current, net_torque) {
+        const colorN_magnet = isPositiveField ? 0xcc0000 : 0x0000cc;
+        const colorS_magnet = isPositiveField ? 0x0000cc : 0xcc0000;
+        magnetN_mesh.material.color.set(colorN_magnet);
+        magnetS_mesh.material.color.set(colorS_magnet);
+        if (textN_mesh) scene.remove(textN_mesh);
+        if (textS_mesh) scene.remove(textS_mesh);
+        const poloN_label = isPositiveField ? 'N' : 'S';
+        const poloS_label = isPositiveField ? 'S' : 'N';
+        textN_mesh = createTextMesh(poloN_label, '#FFFFFF', new THREE.Vector3(-MAGNET_OFFSET, 0, TEXT_Z_OFFSET));
+        textS_mesh = createTextMesh(poloS_label, '#FFFFFF', new THREE.Vector3(MAGNET_OFFSET, 0, TEXT_Z_OFFSET));
+        scene.add(textN_mesh);
+        scene.add(textS_mesh);
+        if (textVPlus_mesh) rotorGroup.remove(textVPlus_mesh);
+        if (textVMinus_mesh) rotorGroup.remove(textVMinus_mesh);
+        const vLeftPos = new THREE.Vector3(-HALF_WIDTH, TERMINAL_Y_OFFSET, 0);
+        const vRightPos = new THREE.Vector3(HALF_WIDTH, TERMINAL_Y_OFFSET, 0);
+        const colorBlack = '#000000';
+        textVPlus_mesh = createTextMesh('V+', colorBlack, isPositiveVoltage ? vLeftPos : vRightPos, 1);
+        textVMinus_mesh = createTextMesh('V-', colorBlack, isPositiveVoltage ? vRightPos : vLeftPos, 1);
+        rotorGroup.add(textVPlus_mesh);
+        rotorGroup.add(textVMinus_mesh);
+        fieldArrow.visible = Math.abs(B_current) > 0.05;
+        const B_direction = new THREE.Vector3(1, 0, 0);
+        if (!isPositiveField) {
+            B_direction.negate();
+            fieldArrow.position.x = B_LENGTH_DISPLAY / 2;
+        } else {
+            fieldArrow.position.x = -B_LENGTH_DISPLAY / 2;
+        }
+        fieldArrow.setDirection(B_direction);
+        const forceVisible = Math.abs(I_current) > 0.05 && Math.abs(B_current) > 0.05 && Math.abs(V_current) > 0.1;
+        forceArrowLeft.visible = forceVisible;
+        forceArrowRight.visible = forceVisible;
+        if (forceVisible) {
+            const forceMagnitudeDisplay = Math.min(2, Math.abs(I_current) * Math.abs(B_current) * 0.5);
+            const I_direction_factor = Math.sign(I_current);
+            const L_local_left = new THREE.Vector3(0, -1, 0);
+            const L_local_right = new THREE.Vector3(0, 1, 0);
+            const rotationMatrixInverse = new THREE.Matrix4().makeRotationY(-currentAngle);
+            const B_local = B_direction.clone().applyMatrix4(rotationMatrixInverse).normalize();
+            const F_local_left_dir = new THREE.Vector3().crossVectors(L_local_left, B_local).multiplyScalar(I_direction_factor).normalize();
+            const F_local_right_dir = new THREE.Vector3().crossVectors(L_local_right, B_local).multiplyScalar(I_direction_factor).normalize();
+            forceArrowLeft.setDirection(F_local_left_dir);
+            forceArrowLeft.setLength(forceMagnitudeDisplay);
+            forceArrowRight.setDirection(F_local_right_dir);
+            forceArrowRight.setLength(forceMagnitudeDisplay);
+            const colorCurrentPositive = new THREE.Color(0x008000);
+            const colorCurrentNegative = new THREE.Color(0xe63946);
+            const wireColor = I_current >= 0 ? colorCurrentPositive : colorCurrentNegative;
+            rotorGroup.children.forEach(child => {
+                if (child.isMesh && child.material.type === 'MeshPhongMaterial') {
+                    child.material.color.copy(wireColor);
+                }
+            });
+        } else {
+            const wireColor = new THREE.Color(0xffa500);
+            rotorGroup.children.forEach(child => {
+                if (child.isMesh && child.material.type === 'MeshPhongMaterial') {
+                    child.material.color.copy(wireColor);
+                }
+            });
+            forceArrowLeft.visible = false;
+            forceArrowRight.visible = false;
+        }
+        rotationDirectionArrow.visible = Math.abs(angularVelocity) > 0.1;
+        if (angularVelocity > 0) {
+            rotationDirectionArrow.rotation.z = Math.PI / 2;
+        } else {
+            rotationDirectionArrow.rotation.z = -Math.PI / 2;
+        }
+    }
+    function updateSimulation() {
+        runPhysicsSimulation(0);
+        document.getElementById('valorVelocidadeLimite').textContent = parseFloat(document.getElementById('velocidadeLimite').value).toFixed(1) + 'x';
+    }
+    function inverterPolaridade() {
+        isPositiveVoltage = !isPositiveVoltage;
+        updateSimulation();
+    }
+    function inverterImas() {
+        isPositiveField = !isPositiveField;
+        updateSimulation();
+    }
+    function resetSimulation() {
+        currentAngle = 0;
+        angularVelocity = 0;
+        isPositiveVoltage = true;
+        isPositiveField = true;
+        document.getElementById('tensao').value = 50;
+        document.getElementById('campoMag').value = 1.0;
+        document.getElementById('velocidadeLimite').value = 0.5;
+        document.getElementById('friccao').value = 0.3; 
+        isPaused = false;
+        document.getElementById('pauseButton').textContent = 'Pausar Simulação';
+        document.getElementById('pauseButton').style.backgroundColor = '#457b9d';
+        lastCurrent = 0;
+        lastNetTorque = 0;
+        lastFEMi = 0;
+        updateSimulation();
+        controls.reset();
+    }
+    function animateLoop() {
+        requestAnimationFrame(animateLoop);
+        const currentTime = performance.now();
+        const deltaTime = (currentTime - lastTime) / 1000;
+        lastTime = currentTime;
+        if (!isPaused) {
+            if (deltaTime < 0.1) {
+                 runPhysicsSimulation(deltaTime);
+            }
+        } else {
+            runPhysicsSimulation(0);
+        }
+        controls.update();
+        renderer.render(scene, camera);
+    }
+    function updateUI(angle_degrees, omega, I, net_torque, FEM_i, V_in, B_in) {
+        document.getElementById('anguloOutput').textContent = angle_degrees.toFixed(1) + ' graus';
+        let displayOmega = omega.toFixed(1) + ' rad/s';
+        let displayI = I;
+        let displayTorque = net_torque;
+        let displayFEMi = FEM_i;
+        if (isPaused) {
+            displayOmega = omega.toFixed(1) + ' rad/s (Pausado)';
+            displayI = lastCurrent;
+            displayTorque = lastNetTorque;
+            displayFEMi = lastFEMi;
+        }
+        document.getElementById('velocidadeOutput').textContent = displayOmega;
+        const currentSpan = document.getElementById('correnteOutput');
+        currentSpan.innerHTML = '';
+        const currentValue = Math.abs(displayI).toFixed(2) + ' A';
+        const currentClass = displayI >= 0 ? 'current-positive' : 'current-negative';
+        const directionText = displayI >= 0 ? 'Horária (I > 0): ' : 'Anti-Horária (I < 0): ';
+        const sign = displayI >= 0 ? '+' : '-';
+        currentSpan.innerHTML = `<span>${directionText}</span> <span class="${currentClass}">${sign} ${currentValue}</span>`;
+        document.getElementById('torqueOutput').textContent = displayTorque.toFixed(3) + ' Nm';
+        document.getElementById('femOutput').textContent = displayFEMi.toFixed(3) + ' V';
+        document.getElementById('valorTensao').textContent = V_in.toFixed(0) + ' V';
+        document.getElementById('valorCampoMag').textContent = B_in.toFixed(1) + ' T';
+    }
+    window.addEventListener('load', () => {
+        initThree();
+        animateLoop();
+    });
+    window.addEventListener('resize', () => {
+        camera.aspect = container.clientWidth / container.clientHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(container.clientWidth, container.clientHeight);
+        // Sincroniza as alturas após o redimensionamento
+        syncPanelHeights(); 
+    }, false);
+</script>
 
 </body>
 </html>
